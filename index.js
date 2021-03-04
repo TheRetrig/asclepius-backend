@@ -1,8 +1,19 @@
 const httpServer = require("http").createServer();
 
+let allowedDomains = ['https://asclepius.xyz', 'http://localhost:3000', 'http://localhost:8080'];
+
 const io = require("socket.io")(httpServer, {
   cors: {
-    origin: "https://asclepius.xyz"
+    origin: function (origin, callback) {
+      // bypass the requests with no origin (like curl requests, mobile apps, etc )
+      if (!origin) return callback(null, true);
+   
+      if (allowedDomains.indexOf(origin) === -1) {
+        let msg = `This site ${origin} does not have an access. Only specific domains are allowed to access it.`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    }
   }
 });
 
@@ -70,10 +81,3 @@ io.on("connection", async (socket) => {
 httpServer.listen(3001, () => {
   console.log('listening on *:3001');
 });
-
-// socket.on("private message", ({ content, to }) => {
-//   socket.to(to).emit("private message", {
-//     content,
-//     from: socket.id,
-//   });
-// });
